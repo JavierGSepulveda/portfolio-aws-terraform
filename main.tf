@@ -29,3 +29,56 @@ resource "aws_subnet" "private" {
     Name = "portfolio-private-subnet"
   }
 }
+resource "aws_internet_gateway" "main" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "portfolio-igw"
+  }
+}
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main.id
+  }
+  tags = {
+    Name = "portfolio-public-rt"
+  }
+}
+resource "aws_route_table_association" "public" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
+resource "aws_security_group" "web" {
+  name        = "portfolio-web-sg"
+  description = "Aprueba http publico y SSH solo desde mi ip"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["201.241.101.159/32"]# Ip Publica de mi equipo
+  }
+
+    egress {
+        description = "Aprueba trafico saliente a cualquier destino"
+        from_port   = 0
+        to_port     = 0
+        protocol    = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+  
+    }
+    tags = {
+    Name = "portfolio-web-sg"
+  }
+}
+
