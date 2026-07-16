@@ -109,3 +109,26 @@ resource "aws_key_pair" "deployer" {
   key_name   = "portfolio-key"
   public_key = file("portfolio-key.pub")
 }
+resource "random_id" "bucket_suffix" {
+  byte_length = 4
+}
+resource "aws_s3_bucket" "assets" {
+  bucket = "portfolio-web-assets-${random_id.bucket_suffix.hex}"
+  tags = {
+    Name = "portfolio-web-assets"
+  }
+}
+resource "aws_s3_bucket_public_access_block" "assets" {
+  bucket = aws_s3_bucket.assets.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+resource "aws_s3_object" "sample_asset" {
+  bucket = aws_s3_bucket.assets.id
+  key    = "hello.txt"
+  source = "assets/hello.txt"
+  etag   = filemd5("assets/hello.txt")
+}
